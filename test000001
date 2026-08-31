@@ -1,0 +1,58 @@
+
+#include "std_testcase.h"
+
+#ifndef OMITBAD
+
+void CWE476_NULL_Pointer_Dereference__binary_if_01_bad()
+{
+    {
+        twoIntsStruct *twoIntsStructPointer = NULL;
+        if ((twoIntsStructPointer != NULL) & (twoIntsStructPointer->intOne == 5))
+        {
+            printLine("intOne == 5");
+        }
+    }
+}
+
+#endi
+
+#ifndef OMITGOOD
+
+static void good1()
+{
+    {
+        twoIntsStruct *twoIntsStructPointer = NULL;
+        if ((twoIntsStructPointer != NULL) && (twoIntsStructPointer->intOne == 5))
+        {
+            printLine("intOne == 5");
+        }
+    }
+}
+
+void CWE476_NULL_Pointer_Dereference__binary_if_01_good()
+{
+    good1();
+}
+
+#endif
+
+#ifdef INCLUDEMAIN
+
+int main(int argc, char * argv[])
+{
+    /* seed randomness */
+    srand( (unsigned)time(NULL) );
+#ifndef OMITGOOD
+    printLine("Calling good()...");
+    CWE476_NULL_Pointer_Dereference__binary_if_01_good();
+    printLine("Finished good()");
+#endif /* OMITGOOD */
+#ifndef OMITBAD
+    printLine("Calling bad()...");
+    CWE476_NULL_Pointer_Dereference__binary_if_01_bad();
+    printLine("Finished bad()");
+#endif /* OMITBAD */
+    return 0;
+}
+
+#endif
