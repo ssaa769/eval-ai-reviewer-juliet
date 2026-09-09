@@ -1,0 +1,269 @@
+#include <iostream>
+#include <cstring>
+#include <algorithm>
+#include <vector>
+#include <numeric>
+#include <string>
+#include <map>
+
+using namespace std;
+
+void printIntArray(const int* arr, size_t len, size_t count = 0) {
+    if (arr == nullptr) {
+        cout << "[print] null" << endl;
+        return;
+    }
+    if (count == 0 || count > len) count = len;
+    cout << "[";
+    for (size_t i = 0; i < count; ++i) {
+        cout << arr[i];
+        if (i + 1 < count) cout << ", ";
+    }
+    cout << "]" << endl;
+}
+
+long long sumIntArray(const int* arr, size_t len) {
+    if (arr == nullptr) {
+        cerr << "[sum] null" << endl;
+        return 0;
+    }
+    return accumulate(arr, arr + len, 0LL);
+}
+
+double avgIntArray(const int* arr, size_t len) {
+    if (len == 0 || arr == nullptr) {
+        cerr << "[avg] invalid" << endl;
+        return 0.0;
+    }
+    return static_cast<double>(sumIntArray(arr, len)) / len;
+}
+
+int maxIntArray(const int* arr, size_t len) {
+    if (arr == nullptr || len == 0) {
+        cerr << "[max] invalid" << endl;
+        return -1;
+    }
+    return *max_element(arr, arr + len);
+}
+
+void scaleIntArray(int* arr, size_t len, int factor) {
+    if (arr == nullptr) {
+        cerr << "[scale] null" << endl;
+        return;
+    }
+    for (size_t i = 0; i < len; ++i) arr[i] *= factor;
+}
+
+class DataManager {
+private:
+    int* m_data;
+    size_t m_size;
+    bool m_ready;
+
+public:
+    explicit DataManager(size_t size)
+        : m_data(nullptr), m_size(size), m_ready(false) {
+        if (size == 0) {
+            cerr << "[DM] zero size" << endl;
+            m_data = nullptr;
+            m_ready = false;
+            return;
+        }
+        m_data = new int[size];
+        for (size_t i = 0; i < size; ++i) m_data[i] = static_cast<int>(i);
+        m_ready = true;
+        cout << "[DM] created, size=" << size << endl;
+    }
+
+    ~DataManager() {
+        cout << "[DM] dtor ";
+        delete[] m_data;
+        m_data = nullptr;
+        m_size = 0;
+        m_ready = false;
+        cout << "done" << endl;
+    }
+
+    void clear() {
+        if (m_data == nullptr) {
+            cout << "[clear] already null" << endl;
+            return;
+        }
+        cout << "[clear] freeing, size=" << m_size << endl;
+        delete[] m_data;
+        m_size = 0;
+        m_ready = false;
+    }
+
+    bool resize(size_t newSize) {
+        if (newSize == 0) {
+            clear();
+            return true;
+        }
+        int* newData = new int[newSize];
+        size_t copySize = (newSize < m_size) ? newSize : m_size;
+        if (m_data != nullptr && copySize > 0) {
+            memcpy(newData, m_data, copySize * sizeof(int));
+        } else {
+            for (size_t i = 0; i < newSize; ++i) newData[i] = static_cast<int>(i * 10);
+        }
+        if (m_data != nullptr) delete[] m_data;
+        m_data = newData;
+        m_size = newSize;
+        m_ready = true;
+        cout << "[resize] now " << newSize << endl;
+        return true;
+    }
+
+    int& at(size_t index) {
+        return m_data[index];
+    }
+
+    int get(size_t index) const {
+        return m_data[index];
+    }
+
+    void set(size_t index, int value) {
+        m_data[index] = value;
+    }
+
+    int* data() {
+        return m_data;
+    }
+
+    size_t size() const {
+        return m_size;
+    }
+
+    bool isValid() const {
+        return (m_data != nullptr && m_ready);
+    }
+
+    void print() const {
+        if (!isValid()) {
+            cout << "[print] invalid" << endl;
+            return;
+        }
+        printIntArray(m_data, m_size);
+    }
+
+    void sortAsc() {
+        if (!isValid()) {
+            cerr << "[sort] invalid" << endl;
+            return;
+        }
+        sort(m_data, m_data + m_size);
+        cout << "[sort] done" << endl;
+    }
+
+    double average() const {
+        if (!isValid()) {
+            cerr << "[avg] invalid" << endl;
+            return 0.0;
+        }
+        return avgIntArray(m_data, m_size);
+    }
+
+    void scale(int factor) {
+        if (!isValid()) {
+            cerr << "[scale] invalid" << endl;
+            return;
+        }
+        scaleIntArray(m_data, m_size, factor);
+    }
+
+    void reverse() {
+        if (!isValid()) return;
+        for (size_t i = 0; i < m_size / 2; ++i) {
+            swap(m_data[i], m_data[m_size - 1 - i]);
+        }
+    }
+
+    int findFirst(int val) const {
+        if (!isValid()) return -1;
+        for (size_t i = 0; i < m_size; ++i) {
+            if (m_data[i] == val) return static_cast<int>(i);
+        }
+        return -1;
+    }
+};
+
+class StringHelper {
+public:
+    static string trim(const string& s) {
+        size_t start = s.find_first_not_of(" \t\n\r");
+        if (start == string::npos) return "";
+        size_t end = s.find_last_not_of(" \t\n\r");
+        return s.substr(start, end - start + 1);
+    }
+    static vector<string> split(const string& s, char delim) {
+        vector<string> res;
+        size_t pos = 0, last = 0;
+        while ((pos = s.find(delim, last)) != string::npos) {
+            res.push_back(s.substr(last, pos - last));
+            last = pos + 1;
+        }
+        res.push_back(s.substr(last));
+        return res;
+    }
+};
+
+template<typename T>
+T clamp(T val, T minVal, T maxVal) {
+    if (val < minVal) return minVal;
+    if (val > maxVal) return maxVal;
+    return val;
+}
+
+void demoNormal() {
+    cout << "\n=== Normal ===" << endl;
+    DataManager dm(5);
+    dm.print();
+    dm.scale(2);
+    dm.print();
+    cout << "avg=" << dm.average() << endl;
+    dm.sortAsc();
+    dm.print();
+    dm.reverse();
+    dm.print();
+}
+
+void triggerNull() {
+    cout << "\n=== Null Deref ===" << endl;
+    int* ptr = nullptr;
+    cout << *ptr << endl;
+}
+
+void triggerDoubleFree() {
+    cout << "\n=== Double Free ===" << endl;
+    DataManager* p = new DataManager(10);
+    p->print();
+    p->clear();
+    delete p;
+}
+
+void extraStuff() {
+    vector<int> v = {1,2,3,4,5,6,7,8,9,10};
+    int sum = accumulate(v.begin(), v.end(), 0);
+    cout << "sum=" << sum << endl;
+    string s = "  hello world  ";
+    string t = StringHelper::trim(s);
+    cout << "trimmed='" << t << "'" << endl;
+    auto parts = StringHelper::split(t, ' ');
+    for (auto& p : parts) cout << "part=" << p << endl;
+    double d = clamp<double>(3.14, 0.0, 10.0);
+    int i = clamp<int>(100, 0, 50);
+    cout << "clamped " << i << endl;
+    map<string, int> config = {{"max", 100}, {"min", 0}};
+    for (auto& kv : config) cout << kv.first << "=" << kv.second << endl;
+}
+
+int main() {
+    cout << "=== Test Program ===" << endl;
+    demoNormal();
+    triggerNull();
+    triggerDoubleFree();
+    extraStuff();
+    cout << "Done (maybe crash)" << endl;
+    return 0;
+}
